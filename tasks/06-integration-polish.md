@@ -22,14 +22,12 @@ showing bounded connections, Makefile/skaffold. Validate success criteria from o
 - Collect PgBouncer `SHOW POOLS` output before/after; assert `sv_idle+sv_active ≤ 5`.
 - Document how to run against port-forwarded services.
 
-### 3. Grafana dashboard
+### 3. Grafana dashboard (optional)
 
-- Provide a dashboard JSON (ConfigMap optional) showing:
-  - Hikari connections active/idle/pending/timeout per pool (tenant).
-  - PgBouncer client/server connections, pools per (db,user).
-  - Wait times.
-- Place under `helm/templates/grafana-dashboard-configmap.yaml` (optional, gated) or
-  `docs/grafana-dashboard.json`.
+- Provide a dashboard JSON under `docs/grafana-dashboard.json` (not shipped by default).
+  Scrape wiring (ServiceMonitors) stays gated by `prometheus.serviceMonitor.enabled`
+  (default false). Metrics are metered in-app regardless, so toggling is just enabling
+  scrape wiring in environments with an OTel/Prometheus controller.
 
 ### 4. README.md
 

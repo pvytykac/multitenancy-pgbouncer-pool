@@ -31,8 +31,9 @@ frontend/
 
 ## Configuration
 
-- `VITE_API_BASE_URL` env at build time pointing at provisioner Service/Ingress
-  (e.g. `http://demo.local/api` or provisioner service DNS).
+- Runtime ConfigMap holds the provisioner base URL; the same image works across
+  environments. The container entrypoint substitutes it into the SPA config (or the
+  SPA fetches `/config.json` at runtime). No build-time `VITE_API_BASE_URL`.
 - Admin token entry (input field) stored in memory/localStorage for demo; sent as
   `X-Admin-Token` header.
 

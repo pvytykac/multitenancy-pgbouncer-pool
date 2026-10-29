@@ -319,13 +319,11 @@ version: 0.1.0
 appVersion: "0.1.0"
 dependencies:
   - name: postgresql
-    version: "15.x.x"           # pin to a tested bitnami release
+    version: "15.5.38"          # pins PG 16.4.0 (bitnami chart 15.5.x ships PG16)
     repository: https://charts.bitnami.com/bitnami
     condition: postgresql.enabled
-  - name: pgbouncer
-    version: "1.x.x"            # pin to a tested bitnami release
-    repository: https://charts.bitnami.com/bitnami
-    condition: pgbouncer.enabled
+# NOTE: there is NO bitnami/pgbouncer Helm chart. PgBouncer ships as a custom
+# Deployment in templates/ using bitnamilegacy/pgbouncer:1.24.1-debian-12-r10.
 ```
 
 `values.yaml` (key parts):
@@ -359,31 +357,11 @@ postgresql:
 
 pgbouncer:
   enabled: true
+  image: "bitnamilegacy/pgbouncer:1.24.1-debian-12-r10"
   adminPassword: "demo-pgbouncer-admin-pw"     # for pgbouncer_admin (admin console)
   exporterPassword: "demo-pgbouncer-exporter-pw" # for pgbouncer_exporter (stats)
-  configuration: |
-    [databases]
-    * = host={{ .Release.Name }}-postgresql port=5432
-    [pgbouncer]
-    listen_addr = 0.0.0.0
-    listen_port = 6432
-    auth_type = scram-sha-256
-    auth_file = /etc/pgbouncer/userlist.txt
-    auth_query = SELECT * FROM public.pgbouncer_get_auth($1)
-    auth_user = pgbouncer_auth
-    pool_mode = transaction
-    default_pool_size = 5
-    min_pool_size = 0
-    reserve_pool_size = 0
-    max_client_conn = 10000
-    max_db_connections = 0
-    server_idle_timeout = 600
-    server_lifetime = 3600
-    server_reset_query = DISCARD ALL
-    ignore_startup_parameters = extra_float_digits,client_encoding
-    admin_users = pgbouncer_admin
-    stats_users = pgbouncer_exporter
-  # userlist.txt with pgbouncer_auth + admin + exporter entries (rendered from secret)
+  # The INI (spec §6) lives in a ConfigMap template; userlist.txt in a Secret with
+  # double-quoted entries. No inline `configuration` value (no bitnami chart).
 
 backends:
   - name: order-service
@@ -426,11 +404,12 @@ Templates:
   (`POSTGRES_HOST={{ .Release.Name }}-postgresql`, `POSTGRES_PORT`, `POSTGRES_USER=postgres`,
   `POSTGRES_PASSWORD` from secret, `BACKEND_SERVICES` + service→table map from
   `.Values.backends`).
-- `frontend-deployment.yaml` + Service + Ingress (React SPA). Frontend is built with
-  `VITE_API_BASE_URL` pointing at the provisioner Service/Ingress.
+- `frontend-deployment.yaml` + Service + Ingress (React SPA). Frontend reads the
+  provisioner base URL from a runtime ConfigMap (not build-time `VITE_API_BASE_URL`).
 - `backend-ingress.yaml` (optional, path/host based) for HTTP access to backends during
   the demo; alternatively document `kubectl port-forward`.
-- `configmap-pgbouncer.yaml` (if chart doesn't support inline configuration).
+- `pgbouncer-deployment.yaml`, `pgbouncer-service.yaml`, `pgbouncer-configmap.yaml`
+  (pgbouncer.ini, spec §6), `pgbouncer-userlist-secret.yaml`.
 - `_helpers.tpl`.
 
 Note: the `pgbouncer_auth` password in the Postgres init script and the corresponding
@@ -444,6 +423,11 @@ Image build: Dockerfiles for `backend-dummy` and `provisioner`; README documents
 cluster, provide `skaffold.yaml` or `Makefile` (optional).
 
 ## 10. Observability (conceptual; not deployed by the chart)
+
+Note: metrics are **metered in-app** (Hikari via Micrometer binder; PgBouncer via
+exporter) regardless of scrape wiring, so they can be toggled on by simply enabling
+ServiceMonitors/scrape annotations in environments with an OTel/Prometheus controller.
+No observability infra is shipped by the chart.
 
 - PgBouncer: `pgbouncer_exporter` (prometheuscommunity) scraping admin console on
   `:6432`? Actually admin console is on same port with special db `pgbouncer`; exporter
@@ -510,16 +494,18 @@ cluster, provide `skaffold.yaml` or `Makefile` (optional).
 
 ## 14. Open questions / spikes
 
-1. Bitnami `pgbouncer` chart: does it support inline `configuration` override and
-   rendering `userlist.txt` from a Secret? (Spike)
-2. Bitnami Postgres 16: confirm `pgbouncer_get_auth` security-definer approach and
-   `scram-sha-256` password hashing. (Spike)
-3. PgBouncer wildcard database + `auth_query` end-to-end with dynamically created roles
-   and DBs. (Spike)
+1. (Resolved) No `bitnami/pgbouncer` chart → ship PgBouncer as a custom Deployment
+   (ConfigMap + Secret). See `docs/spike-findings.md`.
+2. (Resolved) `pgbouncer_get_auth` security-definer works on PG 17.6 (expected on 16.4);
+   `pg_shadow` superuser-only. See `docs/spike-findings.md`.
+3. (Resolved) Wildcard DB + `auth_query` works end-to-end with dynamic roles/DBs.
+   See `docs/spike-findings.md`.
 4. (Resolved) Per-tenant × per-microservice users; password = tenant id; minIdle = 1.
-5. (Resolved) Spring Boot 4.1.2 target (verify availability at implementation time; repo
-   currently uses 4.0.0-RC1 — fall back to latest 4.0.x if needed); credentials derived
-   locally (no secret store).
+5. (Resolved) Spring Boot 4.1.2 target; credentials derived locally.
+6. (Resolved) Postgres chart for PG16: pin `bitnami/postgresql` to chart 15.5.38.
+7. (Resolved) PgBouncer image: `bitnamilegacy/pgbouncer:1.24.1-debian-12-r10`.
+8. (Resolved) Frontend uses runtime ConfigMap for provisioner base URL.
+9. (Resolved) Pool eviction skipped for demo; cleanup endpoints included.
 
 ## 15. Implementation phases
 
@@ -567,5 +553,23 @@ pgbouncer-pooling-demo/
 ```
 
 ---
+
+## 17. Spike findings (Phase 0)
+
+Verified via local Docker PoC (K8s cluster unreachable during spike). Full details:
+`docs/spike-findings.md`. Key results:
+
+- No `bitnami/pgbouncer` Helm chart exists → ship PgBouncer as a custom Deployment
+  using `bitnamilegacy/pgbouncer:1.24.1-debian-12-r10`, mounting a ConfigMap
+  (`pgbouncer.ini`, spec §6) + Secret (`userlist.txt`, double-quoted entries), running
+  the binary directly (entrypoint override).
+- `pgbouncer_get_auth` security-definer function works on PG 17.6 (expected on 16.4);
+  `pg_shadow` is superuser-only. Roles are cluster-global: create once in init script,
+  provisioner only GRANTs in customer DBs.
+- Wildcard `*` database + `auth_query` works end-to-end: client-supplied `dbname`
+  flows through to Postgres; `SHOW POOLS` shows one transaction pool per
+  `(db, user)`.
+- `ignore_startup_parameters = extra_float_digits,client_encoding` sufficient for JDBC.
+- Postgres chart for PG16: `bitnami/postgresql` 15.5.38 (appVersion 16.4.0).
 
 *End of spec. Implementation requires switching out of Plan mode.*

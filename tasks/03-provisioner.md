@@ -116,6 +116,8 @@ provisioner talks to one DB). Credentials from env.
 ### `GET /api/customers/{c}/tenants`
 ### `DELETE` (optional) for cleanup — customer DB drop / tenant schema + roles drop.
 ### `POST /api/seed` → create N customers × M tenants for load demo (params in body).
+### Cleanup endpoints (in scope): `DELETE /api/customers/{c}` and
+`DELETE /api/customers/{c}/tenants/{t}` (idempotent, admin-token guarded).
 
 ## Security (admin token)
 

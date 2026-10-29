@@ -1,6 +1,7 @@
-# Task 07 — Phase 5: Hardening (optional)
+# Task 07 — Phase 5: Hardening (in scope)
 
-> Prerequisites: tasks 02–06. Optional; can be deferred or skipped for demo.
+> Prerequisites: tasks 02–06. Promoted to in-scope per spike decisions: cleanup
+> endpoints included in initial implementation. NetworkPolicies remain optional.
 
 ## Objective
 

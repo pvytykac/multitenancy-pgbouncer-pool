@@ -133,7 +133,8 @@ Validate inputs and derived name lengths (≤ 63).
   ```
 - Register each created pool with `MeterRegistry` (Micrometer Hikari binder) so
   `hikaricp_*` metrics are published.
-- No pool eviction in demo.
+- No pool eviction in demo (decision: skip LRU; pools are small and bounded by JVM
+  memory; acceptable for demo scale).
 
 ### 6. `TenantRepository` / endpoints
 
