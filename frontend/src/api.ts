@@ -1,6 +1,13 @@
 export interface RuntimeConfig {
   apiBaseUrl?: string;
+  backendBaseUrl?: string;
   services?: string[];
+}
+
+export interface BackendItem {
+  id: string;
+  name: string;
+  created_at?: string;
 }
 
 export interface Customer {
@@ -37,6 +44,10 @@ export async function loadConfig(): Promise<RuntimeConfig> {
   if (!cfg.services || cfg.services.length === 0) {
     cfg.services = ["order-service", "inventory-service"];
   }
+  if (!cfg.backendBaseUrl) {
+    const envBackend = (import.meta as any).env?.VITE_BACKEND_BASE_URL;
+    if (envBackend) cfg.backendBaseUrl = String(envBackend);
+  }
   cachedConfig = cfg;
   return cfg;
 }
@@ -44,6 +55,46 @@ export async function loadConfig(): Promise<RuntimeConfig> {
 function baseUrl(cfg: RuntimeConfig): string {
   const b = cfg.apiBaseUrl || "";
   return b.replace(/\/+$/, "");
+}
+
+export function backendBase(cfg: RuntimeConfig): string {
+  let b = cfg.backendBaseUrl || cfg.apiBaseUrl || "";
+  b = b.replace(/\/+$/, "");
+  // derive backend host from a provisioner host when no explicit base is given
+  if (!cfg.backendBaseUrl && b) {
+    b = b.replace(/provisioner\./i, "backend.");
+  }
+  return b;
+}
+
+async function backendRequest<T>(
+  cfg: RuntimeConfig,
+  path: string,
+  init?: RequestInit
+): Promise<T> {
+  const url = backendBase(cfg) + path;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+  const res = await fetch(url, { ...init, headers });
+  const text = await res.text();
+  let data: any = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+  }
+  if (!res.ok) {
+    const msg =
+      (data && (data.error || data.message)) ||
+      (typeof data === "string" ? data : "") ||
+      `HTTP ${res.status}`;
+    throw new ApiError(res.status, msg);
+  }
+  return (data === null ? (undefined as unknown as T) : (data as T));
 }
 
 export class ApiError extends Error {
@@ -156,4 +207,58 @@ export function sanitizeService(s: string): string {
 
 export function roleNames(tenantId: string, services: string[]): string[] {
   return services.map((s) => `app_${tenantId}_${sanitizeService(s)}`);
+}
+
+export async function listItems(
+  cfg: RuntimeConfig,
+  service: string,
+  customerId: string,
+  tenantId: string
+): Promise<BackendItem[]> {
+  return backendRequest<BackendItem[]>(cfg, `/${encodeURIComponent(service)}/api/v1/items`, {
+    method: "GET",
+    headers: { "X-Customer-Id": customerId, "X-Tenant-Id": tenantId },
+  });
+}
+
+export async function createItem(
+  cfg: RuntimeConfig,
+  service: string,
+  customerId: string,
+  tenantId: string,
+  name: string
+): Promise<{ id?: string }> {
+  return backendRequest(cfg, `/${encodeURIComponent(service)}/api/v1/items`, {
+    method: "POST",
+    headers: { "X-Customer-Id": customerId, "X-Tenant-Id": tenantId },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function updateItem(
+  cfg: RuntimeConfig,
+  service: string,
+  customerId: string,
+  tenantId: string,
+  id: string,
+  name: string
+): Promise<void> {
+  await backendRequest(cfg, `/${encodeURIComponent(service)}/api/v1/items/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "X-Customer-Id": customerId, "X-Tenant-Id": tenantId },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function deleteItem(
+  cfg: RuntimeConfig,
+  service: string,
+  customerId: string,
+  tenantId: string,
+  id: string
+): Promise<void> {
+  await backendRequest(cfg, `/${encodeURIComponent(service)}/api/v1/items/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { "X-Customer-Id": customerId, "X-Tenant-Id": tenantId },
+  });
 }

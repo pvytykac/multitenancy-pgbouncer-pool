@@ -2,6 +2,7 @@
 set -e
 
 API_BASE_URL="${API_BASE_URL:-}"
+BACKEND_BASE_URL="${BACKEND_BASE_URL:-}"
 SERVICES="${SERVICES:-order-service,inventory-service}"
 
 services_json="[]"
@@ -19,7 +20,7 @@ if [ -n "$SERVICES" ]; then
 fi
 
 cat > /usr/share/nginx/html/config.json <<EOF
-{"apiBaseUrl":"${API_BASE_URL}","services":${services_json}}
+{"apiBaseUrl":"${API_BASE_URL}","backendBaseUrl":"${BACKEND_BASE_URL}","services":${services_json}}
 EOF
 
 exec nginx -g 'daemon off;'

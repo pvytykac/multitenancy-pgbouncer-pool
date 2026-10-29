@@ -26,6 +26,8 @@ spec:
           env:
             - name: API_BASE_URL
               value: "http://{{ .Values.ingress.provisioner.host }}"
+            - name: BACKEND_BASE_URL
+              value: "http://{{ .Values.ingress.backend.host }}"
             - name: SERVICES
               value: {{ $svcNames := list -}}{{ range .Values.backends -}}{{ $svcNames = append $svcNames .name -}}{{ end -}}{{ join "," $svcNames | quote }}
           ports:
