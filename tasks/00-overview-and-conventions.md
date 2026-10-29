@@ -15,7 +15,7 @@ Status: **Draft spec, nothing implemented.** Implementation requires leaving Pla
 ## Goals
 
 - Reduce connection count from `microservices × replicas × tenants × schemas` to a
-  bounded `0–5 connections per (customer DB, tenant user)` maintained by PgBouncer.
+  bounded `1–5 connections per (customer DB, tenant user)` maintained by PgBouncer.
 - Microservices keep many tiny keepalive Hikari pools pointed at PgBouncer (one per
   `(customer DB, tenant user)`). Target DB selected per connection over the wire via
   JDBC `dbname`; PgBouncer's wildcard `*` database entry passes client-supplied
@@ -45,8 +45,8 @@ Current (per JVM): one Hikari pool per `(customer DB × tenant schema)`, `minIdl
 
 Desired:
 - Client (Hikari): `minIdle 1` (keepalive), `maxPoolSize 2` per `(DB, user)`, pointed at PgBouncer.
-- PgBouncer: `default_pool_size = 5`, `min_pool_size = 0`, `reserve_pool_size = 0`,
-  `pool_mode = transaction`. One backend pool per `(actual dbname, user)` → `0–5`
+- PgBouncer: `default_pool_size = 5`, `min_pool_size = 1`, `reserve_pool_size = 0`,
+  `pool_mode = transaction`. One backend pool per `(actual dbname, user)` → `1–5`
   connections per tenant.
 
 ## Architecture
@@ -125,7 +125,7 @@ backend and provisioner (no shared module).
 ## PgBouncer configuration (summary)
 
 Bitnami chart, `configuration` override (see spec §6 for full INI). Key values:
-`pool_mode = transaction`, `default_pool_size = 5`, `min_pool_size = 0`,
+`pool_mode = transaction`, `default_pool_size = 5`, `min_pool_size = 1`,
 `reserve_pool_size = 0`, wildcard `*` database entry, `auth_query`, `auth_user = pgbouncer_auth`,
 `server_reset_query = DISCARD ALL`, `ignore_startup_parameters = extra_float_digits,client_encoding`.
 Postgres side: security-definer function `public.pgbouncer_get_auth(p_usename TEXT)` over

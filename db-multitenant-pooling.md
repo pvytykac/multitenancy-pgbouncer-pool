@@ -8,7 +8,7 @@
 ## 1. Goals
 
 - Reduce connection count from `microservices × replicas × tenants × schemas` to a
-  bounded `0–5 connections per (customer DB, tenant user)` maintained by PgBouncer.
+  bounded `1–5 connections per (customer DB, tenant user)` maintained by PgBouncer.
 - Microservices keep many tiny keepalive Hikari pools pointed at PgBouncer (one per
   `(customer DB, tenant user)`). The target database is selected per connection over the
   wire (JDBC `dbname`): PgBouncer's wildcard `*` database entry passes the
@@ -42,8 +42,8 @@ Current (per microservice JVM):
 Desired:
 - Client (Hikari): `minIdle 1` (keepalive), `maxPoolSize 2` per `(DB, user)`, pointed
   at PgBouncer.
-- PgBouncer: `default_pool_size = 5`, `min_pool_size = 0`, `reserve_pool_size = 0`,
-  `pool_mode = transaction`. One backend pool per `(actual dbname, user)` → `0–5`
+- PgBouncer: `default_pool_size = 5`, `min_pool_size = 1`, `reserve_pool_size = 0`,
+  `pool_mode = transaction`. One backend pool per `(actual dbname, user)` → `1–5`
   connections per tenant.
 - Net: bounded and lazy on both sides.
 
@@ -141,11 +141,11 @@ auth_query = SELECT * FROM public.pgbouncer_get_auth($1)
 auth_user = pgbouncer_auth
 pool_mode = transaction
 default_pool_size = 5
-min_pool_size = 0
+min_pool_size = 1
 reserve_pool_size = 0
 max_client_conn = 10000
 max_db_connections = 0
-server_idle_timeout = 600
+server_idle_timeout = 60
 server_lifetime = 3600
 server_reset_query = DISCARD ALL
 ignore_startup_parameters = extra_float_digits,client_encoding
