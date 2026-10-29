@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pgbouncer-pooling-demo.fullname" . }}-pgbouncer-exporter
+  labels:
+    {{- include "pgbouncer-pooling-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pgbouncer-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: pgbouncer-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: pgbouncer-exporter
+    spec:
+      containers:
+        - name: exporter
+          image: {{ .Values.pgbouncerExporter.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            - name: PGBOUNCER_DSN
+              value: "postgres://pgbouncer_exporter:{{ .Values.pgbouncer.exporterPassword }}@{{ .Release.Name }}-pgbouncer:6432/pgbouncer"
+          ports:
+            - name: metrics
+              containerPort: 9127
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.pgbouncerExporter.resources | nindent 12 }}

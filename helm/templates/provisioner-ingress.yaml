@@ -1,0 +1,22 @@
+{{- if .Values.ingress.provisioner.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "pgbouncer-pooling-demo.fullname" . }}-provisioner
+  labels:
+    {{- include "pgbouncer-pooling-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provisioner
+spec:
+  ingressClassName: {{ .Values.ingress.provisioner.className }}
+  rules:
+    - host: {{ .Values.ingress.provisioner.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "pgbouncer-pooling-demo.fullname" . }}-provisioner
+                port:
+                  name: http
+{{- end }}

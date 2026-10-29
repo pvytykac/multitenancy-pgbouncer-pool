@@ -1,0 +1,134 @@
+global:
+  imagePullPolicy: IfNotPresent
+  pgbouncerAuthPassword: "demo-pgbouncer-auth-pw"
+
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "demo-postgres-pw"
+    database: "postgres"
+  primary:
+    initdb:
+      scripts:
+        01-pgbouncer-auth.sql: |
+          CREATE ROLE pgbouncer_auth WITH LOGIN PASSWORD '{{ .Values.global.pgbouncerAuthPassword }}' NOINHERIT;
+          GRANT CONNECT ON DATABASE postgres TO pgbouncer_auth;
+          CREATE OR REPLACE FUNCTION public.pgbouncer_get_auth(p_usename TEXT)
+          RETURNS TABLE(usename name, passwd text) LANGUAGE sql SECURITY DEFINER
+          SET search_path = pg_catalog AS $$
+            SELECT usename, passwd::text FROM pg_shadow WHERE usename = p_usename;
+          $$;
+          REVOKE ALL ON FUNCTION public.pgbouncer_get_auth(TEXT) FROM PUBLIC;
+          GRANT EXECUTE ON FUNCTION public.pgbouncer_get_auth(TEXT) TO pgbouncer_auth;
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+pgbouncer:
+  enabled: true
+  image: "bitnamilegacy/pgbouncer:1.24.1-debian-12-r10"
+  adminPassword: "demo-pgbouncer-admin-pw"
+  exporterPassword: "demo-pgbouncer-exporter-pw"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+backends:
+  - name: order-service
+    replicas: 3
+    table: orders
+  - name: inventory-service
+    replicas: 2
+    table: inventory
+
+backendImage:
+  repository: backend-dummy
+  tag: latest
+  pullPolicy: ""
+
+backend:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+provisioner:
+  replicas: 1
+  image:
+    repository: provisioner
+    tag: latest
+    pullPolicy: ""
+  adminToken: "demo-admin-token"
+  corsOrigins: "http://demo.local"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+frontend:
+  replicas: 1
+  image:
+    repository: frontend
+    tag: latest
+    pullPolicy: ""
+  ingress:
+    enabled: true
+    className: nginx
+    host: demo.local
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+grafana:
+  dashboard:
+    enabled: false
+
+prometheus:
+  serviceMonitor:
+    enabled: false
+    namespace: ""
+    labels: {}
+    interval: 30s
+
+ingress:
+  backend:
+    enabled: false
+    className: nginx
+    host: ""
+  provisioner:
+    enabled: true
+    className: nginx
+    host: demo.local
+    path: /api
+  pgbouncerExporter: false
+
+pgbouncerExporter:
+  image: "prometheuscommunity/pgbouncer-exporter:latest"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

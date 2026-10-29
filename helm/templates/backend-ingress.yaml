@@ -1,0 +1,30 @@
+{{- if .Values.ingress.backend.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "pgbouncer-pooling-demo.fullname" . }}-backend
+  labels:
+    {{- include "pgbouncer-pooling-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+  annotations:
+    {{- with .Values.ingress.backend.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.backend.className }}
+  rules:
+    {{- if .Values.ingress.backend.host }}
+    - host: {{ .Values.ingress.backend.host }}
+      http:
+        paths:
+          {{- range $.Values.backends }}
+          - path: /{{ .name }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "pgbouncer-pooling-demo.fullname" $ }}-{{ .name }}
+                port:
+                  name: http
+          {{- end }}
+    {{- end }}
+{{- end }}

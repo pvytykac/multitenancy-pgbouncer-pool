@@ -1,0 +1,23 @@
+{{- range .Values.backends }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pgbouncer-pooling-demo.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "pgbouncer-pooling-demo.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: backend
+    backend: {{ .name }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: backend
+    backend: {{ .name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+{{- end }}

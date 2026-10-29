@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pgbouncer-pooling-demo.fullname" . }}-provisioner
+  labels:
+    {{- include "pgbouncer-pooling-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: provisioner
+spec:
+  replicas: {{ .Values.provisioner.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: provisioner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: provisioner
+    spec:
+      containers:
+        - name: provisioner
+          image: "{{ .Values.provisioner.image.repository }}:{{ .Values.provisioner.image.tag }}"
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.provisioner.image.pullPolicy }}
+          env:
+            - name: POSTGRES_HOST
+              value: {{ .Release.Name }}-postgresql
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql
+                  key: postgres-password
+            - name: BACKEND_SERVICES
+              value: {{ $svcNames := list -}}{{ range .Values.backends -}}{{ $svcNames = append $svcNames .name -}}{{ end -}}{{ join "," $svcNames | quote }}
+            - name: ADMIN_TOKEN
+              value: {{ .Values.provisioner.adminToken | quote }}
+            - name: CORS_ORIGINS
+              value: {{ .Values.provisioner.corsOrigins | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.provisioner.resources | nindent 12 }}

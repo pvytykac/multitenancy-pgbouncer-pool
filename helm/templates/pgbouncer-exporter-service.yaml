@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pgbouncer-pooling-demo.fullname" . }}-pgbouncer-exporter
+  labels:
+    {{- include "pgbouncer-pooling-demo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pgbouncer-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: pgbouncer-exporter
+  ports:
+    - name: metrics
+      port: 9127
+      targetPort: metrics
+      protocol: TCP

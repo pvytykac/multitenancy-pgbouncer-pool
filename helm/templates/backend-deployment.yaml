@@ -1,0 +1,62 @@
+{{- range .Values.backends }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pgbouncer-pooling-demo.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "pgbouncer-pooling-demo.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: backend
+    backend: {{ .name }}
+spec:
+  replicas: {{ .replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" $ }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: backend
+      backend: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "pgbouncer-pooling-demo.name" $ }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: backend
+        backend: {{ .name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+        - name: backend
+          image: "{{ $.Values.backendImage.repository }}:{{ $.Values.backendImage.tag }}"
+          imagePullPolicy: {{ default $.Values.global.imagePullPolicy $.Values.backendImage.pullPolicy }}
+          env:
+            - name: SERVICE_NAME
+              value: {{ .name | quote }}
+            - name: TABLE_NAME
+              value: {{ .table | quote }}
+            - name: PGBouncer_HOST
+              value: {{ $.Release.Name }}-pgbouncer
+            - name: PGBouncer_PORT
+              value: "6432"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml $.Values.backend.resources | nindent 12 }}
+{{- end }}
