@@ -21,3 +21,11 @@ helm-install:
 
 helm-uninstall:
 	helm uninstall $(RELEASE) -n $(NAMESPACE)
+
+seed:
+	bash load-test/seed.sh
+
+load-test:
+	bash load-test/run.sh
+
+.PHONY: build-images load-images helm-lint helm-template helm-install helm-uninstall seed load-test

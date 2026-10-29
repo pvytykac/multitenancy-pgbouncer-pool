@@ -1,0 +1,86 @@
+{
+  "title": "PgBouncer pooling demo",
+  "uid": "pgbouncer-pooling-demo",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Hikari active connections (by pool)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(hikaricp_connections_active) by (pool)",
+          "legendFormat": "{{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Hikari idle connections (by pool)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(hikaricp_connections_idle) by (pool)",
+          "legendFormat": "{{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Hikari max pool size (by pool)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(hikaricp_connections_max) by (pool)",
+          "legendFormat": "{{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "PgBouncer server connections (active + idle)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(pgbouncer_pools_server_active_connections) by (database, user)",
+          "legendFormat": "{{database}}/{{user}} active"
+        },
+        {
+          "expr": "sum(pgbouncer_pools_server_idle_connections) by (database, user)",
+          "legendFormat": "{{database}}/{{user}} idle"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "PgBouncer client active connections",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(pgbouncer_pools_client_active_connections) by (database, user)",
+          "legendFormat": "{{database}}/{{user}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Total PgBouncer server connections",
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "sum(pgbouncer_pools_server_active_connections + pgbouncer_pools_server_idle_connections)",
+          "legendFormat": "total"
+        }
+      ]
+    }
+  ]
+}

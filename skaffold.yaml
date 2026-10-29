@@ -1,0 +1,19 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: pg-db-pooling-demo
+build:
+  artifacts:
+    - image: backend-dummy
+      context: backend-dummy
+    - image: provisioner
+      context: provisioner
+    - image: frontend
+      context: frontend
+deploy:
+  helm:
+    releases:
+      - name: demo
+        chartPath: helm
+        namespace: default
+        createNamespace: true
