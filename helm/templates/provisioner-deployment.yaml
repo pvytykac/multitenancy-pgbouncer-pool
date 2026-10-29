@@ -38,7 +38,7 @@ spec:
             - name: BACKEND_SERVICES
               value: {{ $svcNames := list -}}{{ range .Values.backends -}}{{ $svcNames = append $svcNames .name -}}{{ end -}}{{ join "," $svcNames | quote }}
             - name: ADMIN_TOKEN
-              value: {{ .Values.provisioner.adminToken | quote }}
+              value: {{ required "provisioner.adminToken is required" .Values.provisioner.adminToken | quote }}
             - name: CORS_ORIGINS
               value: {{ .Values.provisioner.corsOrigins | quote }}
           ports:

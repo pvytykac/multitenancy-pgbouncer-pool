@@ -1,5 +1,6 @@
 package com.example.provisioner;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,13 @@ public class AdminTokenFilter extends OncePerRequestFilter {
 
     @Value("${admin.token:}")
     private String adminToken;
+
+    @PostConstruct
+    public void requireToken() {
+        if (adminToken == null || adminToken.isBlank()) {
+            throw new IllegalStateException("admin.token must be set (ADMIN_TOKEN env var)");
+        }
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

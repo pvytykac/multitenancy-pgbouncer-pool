@@ -18,7 +18,7 @@ public final class Sanitizer {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < lower.length(); i++) {
             char c = lower.charAt(i);
-            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_') {
                 sb.append(c);
             }
         }

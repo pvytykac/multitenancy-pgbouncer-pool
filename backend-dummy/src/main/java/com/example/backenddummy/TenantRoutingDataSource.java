@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PreDestroy;
 import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,5 +74,16 @@ public class TenantRoutingDataSource extends AbstractRoutingDataSource {
         config.setMetricsTrackerFactory(new MicrometerMetricsTrackerFactory(meterRegistry));
 
         return new HikariDataSource(config);
+    }
+
+    @PreDestroy
+    public void closePools() {
+        for (HikariDataSource ds : pools.values()) {
+            try {
+                ds.close();
+            } catch (Exception ignored) {
+            }
+        }
+        pools.clear();
     }
 }

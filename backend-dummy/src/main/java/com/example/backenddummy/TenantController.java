@@ -23,6 +23,9 @@ public class TenantController {
     public TenantController(DataSource dataSource,
                             @Value("${TABLE_NAME:items}") String tableName,
                             @Value("${SERVICE_NAME:order-service}") String serviceName) {
+        if (tableName == null || !tableName.matches("[A-Za-z0-9_]+")) {
+            throw new IllegalArgumentException("TABLE_NAME must be a simple identifier");
+        }
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.tableName = tableName;
         this.serviceName = serviceName;

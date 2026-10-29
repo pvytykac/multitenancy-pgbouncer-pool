@@ -5,9 +5,13 @@ metadata:
 build:
   artifacts:
     - image: backend-dummy
-      context: backend-dummy
+      context: .
+      docker:
+        dockerfile: backend-dummy/Dockerfile
     - image: provisioner
-      context: provisioner
+      context: .
+      docker:
+        dockerfile: provisioner/Dockerfile
     - image: frontend
       context: frontend
 deploy:

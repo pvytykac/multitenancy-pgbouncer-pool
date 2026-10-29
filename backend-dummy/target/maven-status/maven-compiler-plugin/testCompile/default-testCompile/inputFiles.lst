@@ -1,2 +1,2 @@
-/home/paly/projects/pgbouncer-pooling-demo/backend-dummy/src/test/java/com/example/backenddummy/SanitizerTest.java
-/home/paly/projects/pgbouncer-pooling-demo/backend-dummy/src/test/java/com/example/backenddummy/TenantCredentialServiceTest.java
+/home/paly/projects/pg-db-pooling/backend-dummy/src/test/java/com/example/backenddummy/SanitizerTest.java
+/home/paly/projects/pg-db-pooling/backend-dummy/src/test/java/com/example/backenddummy/TenantCredentialServiceTest.java

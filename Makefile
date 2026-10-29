@@ -3,8 +3,8 @@ RELEASE := demo
 NAMESPACE := default
 
 build-images:
-	docker build -t backend-dummy:latest ./backend-dummy
-	docker build -t provisioner:latest ./provisioner
+	docker build -f backend-dummy/Dockerfile -t backend-dummy:latest .
+	docker build -f provisioner/Dockerfile -t provisioner:latest .
 	docker build -t frontend:latest ./frontend
 
 load-images:

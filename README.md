@@ -10,8 +10,10 @@ keeping per-customer databases and per-tenant schemas/users.
 - Docker.
 - `psql` (for `SHOW POOLS`).
 - `k6` (for the load test) — optional but recommended.
-- An ingress controller is optional; the chart uses `demo.local` for the frontend
-  and provisioner when ingress is enabled.
+- An ingress controller is optional; the chart uses `frontend.demo.local` for the
+  frontend, `provisioner.demo.local` for the provisioner, and
+  `backend.demo.local/<service>` (e.g. `backend.demo.local/order-service`) for the
+  backends when ingress is enabled.
 
 ## Build images
 

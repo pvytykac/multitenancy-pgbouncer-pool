@@ -98,7 +98,7 @@ export async function createCustomer(cfg: RuntimeConfig, token: string, name: st
 }
 
 export async function deleteCustomer(cfg: RuntimeConfig, token: string, id: string): Promise<void> {
-  await request(cfg, `/api/customers/${encodeURIComponent(id)}`, token, { method: "DELETE" });
+  await request(cfg, `/api/customers/${encodeURIComponent(id)}?confirm=true`, token, { method: "DELETE" });
 }
 
 export async function listTenants(cfg: RuntimeConfig, token: string, customerId: string): Promise<Tenant[]> {
@@ -125,7 +125,7 @@ export async function deleteTenant(
   customerId: string,
   tenantId: string
 ): Promise<void> {
-  await request(cfg, `/api/customers/${encodeURIComponent(customerId)}/tenants/${encodeURIComponent(tenantId)}`, token, {
+  await request(cfg, `/api/customers/${encodeURIComponent(customerId)}/tenants/${encodeURIComponent(tenantId)}?confirm=true`, token, {
     method: "DELETE",
   });
 }
@@ -151,7 +151,7 @@ export function schemaName(t: Tenant): string {
 }
 
 export function sanitizeService(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return s.toLowerCase().replace(/[^a-z0-9_]/g, "");
 }
 
 export function roleNames(tenantId: string, services: string[]): string[] {

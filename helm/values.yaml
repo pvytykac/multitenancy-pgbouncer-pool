@@ -73,7 +73,7 @@ provisioner:
     tag: latest
     pullPolicy: ""
   adminToken: "demo-admin-token"
-  corsOrigins: "http://demo.local"
+  corsOrigins: "http://frontend.demo.local"
   resources:
     requests:
       cpu: 250m
@@ -91,7 +91,7 @@ frontend:
   ingress:
     enabled: true
     className: nginx
-    host: demo.local
+    host: frontend.demo.local
   resources:
     requests:
       cpu: 100m
@@ -113,18 +113,18 @@ prometheus:
 
 ingress:
   backend:
-    enabled: false
+    enabled: true
     className: nginx
-    host: ""
+    host: "backend.demo.local"
   provisioner:
     enabled: true
     className: nginx
-    host: demo.local
+    host: provisioner.demo.local
     path: /api
   pgbouncerExporter: false
 
 pgbouncerExporter:
-  image: "prometheuscommunity/pgbouncer-exporter:latest"
+  image: "prometheuscommunity/pgbouncer-exporter:v0.9.0"
   resources:
     requests:
       cpu: 50m

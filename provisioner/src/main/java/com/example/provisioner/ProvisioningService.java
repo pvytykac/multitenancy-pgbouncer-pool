@@ -199,7 +199,9 @@ public class ProvisioningService {
         } catch (Exception ignored) {
         }
 
+        Sanitizer.validateIdentifier(schemaName, "schemaName");
         if (dbName != null) {
+            Sanitizer.validateIdentifier(dbName, "dbName");
             JdbcTemplate db = jdbcFor(dbName);
             try {
                 db.execute("DROP SCHEMA IF EXISTS \"" + schemaName + "\" CASCADE");
@@ -246,6 +248,8 @@ public class ProvisioningService {
             adminJdbc.update("DELETE FROM registry.customers WHERE id = ?", custId);
             return;
         }
+
+        Sanitizer.validateIdentifier(dbName, "dbName");
 
         try {
             adminJdbc.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity " +
