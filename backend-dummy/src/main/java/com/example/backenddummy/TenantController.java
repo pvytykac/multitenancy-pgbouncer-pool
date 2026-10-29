@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping({"/api/v1", "${SERVICE_NAME:}/api/v1"})
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = {org.springframework.web.bind.annotation.RequestMethod.GET, org.springframework.web.bind.annotation.RequestMethod.POST, org.springframework.web.bind.annotation.RequestMethod.PUT, org.springframework.web.bind.annotation.RequestMethod.DELETE, org.springframework.web.bind.annotation.RequestMethod.OPTIONS})
 public class TenantController {
 
