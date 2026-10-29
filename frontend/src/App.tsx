@@ -5,6 +5,7 @@ import {
   createCustomer,
   deleteCustomer,
   listTenants,
+  listConnections,
   createTenant,
   deleteTenant,
   seed,
@@ -18,6 +19,7 @@ import {
   type RuntimeConfig,
   type Customer,
   type Tenant,
+  type DbConnectionStat,
   type BackendItem,
   ApiError,
 } from "./api";
@@ -38,6 +40,7 @@ export default function App() {
   const [seedCustomers, setSeedCustomers] = useState(2);
   const [seedTenants, setSeedTenants] = useState(2);
   const [loading, setLoading] = useState(false);
+  const [connections, setConnections] = useState<DbConnectionStat[]>([]);
 
   useEffect(() => {
     loadConfig().then(setConfig).catch((e) => setError(String(e)));
@@ -69,6 +72,25 @@ export default function App() {
     if (config) refreshCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, token]);
+
+  useEffect(() => {
+    if (!config) return;
+    refreshConnections();
+    const id = setInterval(refreshConnections, 5000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config, token]);
+
+  async function refreshConnections() {
+    if (!config) return;
+    try {
+      const c = await listConnections(config, token);
+      setConnections(c);
+    } catch (e) {
+      // non-fatal; surface only if no other error
+      setError(errMsg(e));
+    }
+  }
 
   async function refreshTenants(customerId: string) {
     if (!config || !customerId) return;
@@ -460,6 +482,35 @@ export default function App() {
           ))}
         </section>
       )}
+
+      <section style={{ marginTop: 24, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
+        <h2>Postgres connections (open, by database)</h2>
+        <div style={{ fontSize: 12, color: "#666", marginBottom: 8 }}>
+          Auto-refreshes every 5s. Total: {connections.reduce((a, c) => a + (c.connections || 0), 0)}
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Database</th>
+              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Open connections</th>
+            </tr>
+          </thead>
+          <tbody>
+            {connections.map((c) => (
+              <tr key={c.database}>
+                <td style={{ borderBottom: "1px solid #eee", padding: 4, fontFamily: "monospace", fontSize: 11 }}>
+                  {c.database}
+                </td>
+                <td style={{ borderBottom: "1px solid #eee", padding: 4 }}>{c.connections}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {connections.length === 0 && <div style={{ color: "#888", fontSize: 12, marginTop: 4 }}>No open connections reported.</div>}
+        <button onClick={refreshConnections} style={{ marginTop: 8, fontSize: 11 }}>
+          Refresh
+        </button>
+      </section>
 
       <section style={{ marginTop: 24, padding: 12, border: "1px solid #ddd", borderRadius: 8 }}>
         <h2>Seed (optional)</h2>

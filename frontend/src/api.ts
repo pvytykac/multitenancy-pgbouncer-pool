@@ -26,6 +26,11 @@ export interface Tenant {
   created_at?: string;
 }
 
+export interface DbConnectionStat {
+  database: string;
+  connections: number;
+}
+
 let cachedConfig: RuntimeConfig | null = null;
 
 export async function loadConfig(): Promise<RuntimeConfig> {
@@ -156,6 +161,10 @@ export async function listTenants(cfg: RuntimeConfig, token: string, customerId:
   return request<Tenant[]>(cfg, `/api/customers/${encodeURIComponent(customerId)}/tenants`, token, {
     method: "GET",
   });
+}
+
+export async function listConnections(cfg: RuntimeConfig, token: string): Promise<DbConnectionStat[]> {
+  return request<DbConnectionStat[]>(cfg, "/api/connections", token, { method: "GET" });
 }
 
 export async function createTenant(

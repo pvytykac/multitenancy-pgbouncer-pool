@@ -177,6 +177,12 @@ public class ProvisioningService {
         return adminJdbc.queryForList("SELECT id, name, db_name, created_at FROM registry.customers ORDER BY created_at");
     }
 
+    public List<Map<String, Object>> connections() {
+        return adminJdbc.queryForList(
+                "SELECT datname AS database, count(*)::int AS connections " +
+                "FROM pg_stat_activity WHERE datname IS NOT NULL GROUP BY datname ORDER BY datname");
+    }
+
     public List<Map<String, Object>> listTenants(String customerId) {
         Sanitizer.validateCustomerId(customerId);
         String custId = Sanitizer.sanitize(customerId);
