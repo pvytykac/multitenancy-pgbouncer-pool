@@ -163,7 +163,7 @@ no advisory locks, no `LISTEN/NOTIFY`, no temp tables, no `SET` outside transact
 ## Directory layout (proposed)
 
 ```
-pgbouncer-pooling-demo/
+pg-db-pooling/
 ├── pom.xml                      # parent (multi-module)
 ├── backend-dummy/
 │   ├── pom.xml

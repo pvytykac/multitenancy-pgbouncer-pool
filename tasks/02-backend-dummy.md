@@ -12,10 +12,10 @@ Actuator/Prometheus metrics, and demo CRUD endpoints.
 
 ## Project scaffolding (do first)
 
-Create `/home/paly/projects/pgbouncer-pooling-demo/` (or reuse) with:
+Create `/home/paly/projects/pg-db-pooling/` (or reuse) with:
 
 ```
-pgbouncer-pooling-demo/
+pg-db-pooling/
 ├── pom.xml                      # parent (multi-module)
 ├── backend-dummy/
 │   ├── pom.xml

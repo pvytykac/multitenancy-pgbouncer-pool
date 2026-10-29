@@ -309,7 +309,7 @@ the roles created by the provisioner. No external secret store is used in the de
 
 ## 9. Helm chart design
 
-New directory: `/home/paly/projects/pgbouncer-pooling-demo/` (or reuse a new project).
+New directory: `/home/paly/projects/pg-db-pooling/` (or reuse a new project).
 Chart: `helm/` with `Chart.yaml`:
 
 ```yaml
@@ -529,7 +529,7 @@ Phase 5 — Hardening (optional): NetworkPolicies, cleanup endpoints.
 ## 16. Directory layout (proposed)
 
 ```
-pgbouncer-pooling-demo/
+pg-db-pooling/
 ├── pom.xml                      # parent (multi-module)
 ├── backend-dummy/
 │   ├── pom.xml
