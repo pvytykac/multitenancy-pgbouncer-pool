@@ -59,7 +59,9 @@ export default function App() {
       setCustomers(c);
       if (selectedCustomer && !c.find((x) => x.id === selectedCustomer)) {
         setSelectedCustomer("");
+        setSelectedTenant("");
         setTenants([]);
+        setItemsByService({});
       }
     } catch (e) {
       setError(errMsg(e));
@@ -122,18 +124,18 @@ export default function App() {
   }
 
   useEffect(() => {
+    setSelectedTenant("");
+    setTenants([]);
+    setItemsByService({});
+    if (selectedCustomer) refreshTenants(selectedCustomer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCustomer]);
+
+  useEffect(() => {
     if (selectedCustomer && selectedTenant) refreshAllItems(selectedCustomer, selectedTenant);
     else setItemsByService({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCustomer, selectedTenant, config]);
-
-  useEffect(() => {
-    setSelectedTenant("");
-    setItemsByService({});
-    if (selectedCustomer) refreshTenants(selectedCustomer);
-    else setTenants([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCustomer]);
+  }, [selectedTenant, config]);
 
   async function handleCreateCustomer(e: React.FormEvent) {
     e.preventDefault();
@@ -319,7 +321,12 @@ export default function App() {
                   background: selectedCustomer === c.id ? "#eef" : "#fff",
                   cursor: "pointer",
                 }}
-                onClick={() => setSelectedCustomer(c.id)}
+                onClick={() => {
+                  setSelectedCustomer(c.id);
+                  setSelectedTenant("");
+                  setTenants([]);
+                  setItemsByService({});
+                }}
               >
                 <strong>{c.id}</strong> {c.name && c.name !== c.id ? `(${c.name})` : ""}
                 <div style={{ fontSize: 12, color: "#555" }}>DB: {dbName(c)}</div>
