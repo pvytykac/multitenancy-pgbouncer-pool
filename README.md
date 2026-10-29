@@ -146,6 +146,29 @@ helm upgrade demo ./helm -n default --set prometheus.serviceMonitor.enabled=true
 Import `docs/grafana-dashboard.json` into Grafana for a starter dashboard
 (Hikari + PgBouncer panels).
 
+## Hardening notes
+
+- **Pool eviction (production):** PgBouncer reuses server connections; tune
+  `server_lifetime` / `server_idle_timeout` and application-side pool sizing.
+  The demo keeps a single small pool per backend; production should size Hikari
+  pools to the number of backend pods, not tenants.
+- **Postgres `max_connections`:** Bitnami defaults may be low for many tenants.
+  Raise via `postgresql.primary.extendedConfiguration` / `max_connections` if
+  needed (e.g. 200+). PgBouncer's `max_db_connections` should be tuned per
+  database to bound backend connections (see `pgbouncer-configmap`).
+- **Secret rotation:** rotate `pgbouncerAuthPassword`, `adminPassword`,
+  `exporterPassword`, `POSTGRES_PASSWORD`, and `ADMIN_TOKEN` by updating Helm
+  values/secrets and restarting pods; re-run the provisioner init SQL for the
+  `pgbouncer_auth` role password. Tenant role passwords are derived from tenant
+  ids and should be rotated by re-provisioning tenants.
+- **Cleanup:** destructive endpoints require `X-Admin-Token` and `?confirm=true`:
+  ```bash
+  curl -sS -X DELETE 'http://localhost:8081/api/customers/acme/tenants/t1?confirm=true' \
+    -H 'X-Admin-Token: demo-admin-token'
+  curl -sS -X DELETE 'http://localhost:8081/api/customers/acme?confirm=true' \
+    -H 'X-Admin-Token: demo-admin-token'
+  ```
+
 ## Uninstall
 
 ```bash

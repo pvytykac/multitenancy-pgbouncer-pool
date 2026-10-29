@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -68,13 +69,21 @@ public class CustomerController {
     }
 
     @DeleteMapping("/{c}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable String c) {
+    public ResponseEntity<?> deleteCustomer(@PathVariable String c,
+                                            @RequestParam(name = "confirm", required = false, defaultValue = "true") boolean confirm) {
+        if (!confirm) {
+            return ResponseEntity.badRequest().body(Map.of("error", "confirm=true is required"));
+        }
         service.deleteCustomer(c);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{c}/tenants/{t}")
-    public ResponseEntity<Void> deleteTenant(@PathVariable String c, @PathVariable String t) {
+    public ResponseEntity<?> deleteTenant(@PathVariable String c, @PathVariable String t,
+                                         @RequestParam(name = "confirm", required = false, defaultValue = "true") boolean confirm) {
+        if (!confirm) {
+            return ResponseEntity.badRequest().body(Map.of("error", "confirm=true is required"));
+        }
         service.deleteTenant(c, t);
         return ResponseEntity.noContent().build();
     }

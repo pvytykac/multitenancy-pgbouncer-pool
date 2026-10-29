@@ -192,18 +192,19 @@ public class ProvisioningService {
         String tenantId = Sanitizer.sanitize(rawTenantName);
         String schemaName = "tenant_" + tenantId;
 
-        String dbName;
+        String dbName = null;
         try {
             dbName = adminJdbc.queryForObject(
                     "SELECT db_name FROM registry.customers WHERE id = ?", String.class, custId);
-        } catch (Exception e) {
-            return;
+        } catch (Exception ignored) {
         }
 
-        JdbcTemplate db = jdbcFor(dbName);
-        try {
-            db.execute("DROP SCHEMA IF EXISTS \"" + schemaName + "\" CASCADE");
-        } catch (Exception ignored) {
+        if (dbName != null) {
+            JdbcTemplate db = jdbcFor(dbName);
+            try {
+                db.execute("DROP SCHEMA IF EXISTS \"" + schemaName + "\" CASCADE");
+            } catch (Exception ignored) {
+            }
         }
         for (String service : services()) {
             String sanitizedService = Sanitizer.sanitizeServiceName(service);
@@ -213,7 +214,10 @@ public class ProvisioningService {
             } catch (Exception ignored) {
             }
         }
-        adminJdbc.update("DELETE FROM registry.tenants WHERE id = ?", tenantId);
+        try {
+            adminJdbc.update("DELETE FROM registry.tenants WHERE id = ?", tenantId);
+        } catch (Exception ignored) {
+        }
     }
 
     public void deleteCustomer(String customerId) {
